@@ -3,6 +3,7 @@ package services
 import (
 	"gorotines/models"
 	"gorotines/pkg/repositories"
+	"log"
 )
 
 // TaskService represents a task service
@@ -16,26 +17,41 @@ func NewTaskService(repository repositories.TaskRepository) *TaskService {
 }
 
 // CreateTask creates a new task
-func (s *TaskService) CreateTask(task *models.Task) error {
-	return s.repository.Create(task)
+func (s *TaskService) CreateTask(task *models.Task, resultChan chan<- error) {
+	err := s.repository.Create(task)
+	resultChan <- err
 }
 
 // GetTasks return all tasks
-func (s *TaskService) GetTasks() ([]models.Task, error) {
-	return s.repository.GetAll()
+func (s *TaskService) GetTasks(resultChan chan<- []models.Task) {
+	tasks, err := s.repository.GetAll()
+	if err != nil {
+		log.Println("Failed to fetch tasks: ", err)
+		resultChan <- nil
+		return
+	}
+	resultChan <- tasks
 }
 
 // GetTaskByID return one task by ID
-func (s *TaskService) GetTaskByID(id int) (*models.Task, error) {
-	return s.repository.GetByID(id)
+func (s *TaskService) GetTaskByID(id int, resultChan chan<- *models.Task) {
+	task, err := s.repository.GetByID(id)
+	if err != nil {
+		log.Println("Failed to fetch task: ", err)
+		resultChan <- nil
+		return
+	}
+	resultChan <- task
 }
 
 // UpdateTask a task by ID
-func (s *TaskService) UpdateTask(task *models.Task) error {
-	return s.repository.Update(task)
+func (s *TaskService) UpdateTask(task *models.Task, resultChan chan<- error) {
+	err := s.repository.Update(task)
+	resultChan <- err
 }
 
 // DeleteTask excludes a task by ID
-func (s *TaskService) DeleteTask(id int) error {
-	return s.repository.Delete(id)
+func (s *TaskService) DeleteTask(id int, resultChan chan<- error) {
+	err := s.repository.Delete(id)
+	resultChan <- err
 }
